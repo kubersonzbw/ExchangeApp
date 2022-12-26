@@ -5,8 +5,6 @@ const currencyLeft = document.querySelector("#currency-one");
 const currencyRight = document.querySelector("#currency-two");
 const rateInfo = document.querySelector(".rate-info");
 const btnSwap = document.querySelector(".swap");
-let previousValue;
-let timer;
 
 async function exchange() {
   {
@@ -15,12 +13,9 @@ async function exchange() {
     try {
       const res = await axios.get(URL);
       const rate = res.data.result;
+      console.log(rate);
       const sumExchange = (parseInt(amountLeft.value) * rate).toFixed(2);
-      if (isNaN(sumExchange)) {
-        return 1;
-      } else {
-        textConent(rate, sumExchange);
-      }
+      textConent(rate, sumExchange);
     } catch (error) {
       console.error(error);
     }
@@ -28,49 +23,51 @@ async function exchange() {
 }
 
 const textConent = (rate, sum) => {
-  exchange().then((result) => {
-    if (result === 1) {
-      console.log("seima");
-      amountRight.value = "";
-    } else {
-      rateInfo.textContent = `1 ${currencyLeft.value} = ${rate} ${currencyRight.value}`;
-      amountRight.value = sum;
-    }
-  });
+  rateInfo.textContent = `1 ${currencyLeft.value} = ${rate} ${currencyRight.value}`;
+  amountRight.value = sum;
 };
 
 const swapCurreny = () => {
   const leftValue = currencyLeft.value;
   currencyLeft.value = currencyRight.value;
   currencyRight.value = leftValue;
+  exchange();
 };
 
-btnSwap.addEventListener("click", swapCurreny);
+btnSwap.addEventListener(
+  "click",
+  _.debounce(() => {
+    swapCurreny();
+  }, 500)
+);
 
-amountLeft.addEventListener("keyup", () => {
-  if (amountLeft.value !== previousValue && amountLeft.value > 0) {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
+amountLeft.addEventListener(
+  "input",
+  _.debounce(() => {
+    if (amountLeft.value.trim().length === 0) {
+      amountRight.value = "";
+      return;
+    }
+    if (amountLeft.value > 0) {
       exchange();
-      previousValue = amountLeft.value;
-    }, 500);
-  }
-});
-currencyLeft.addEventListener("change", () => {
-  if (amountLeft.value !== previousValue && amountLeft.value > 0) {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
+    }
+  }, 500)
+);
+
+currencyLeft.addEventListener(
+  "change",
+  _.debounce(() => {
+    if (amountLeft.value > 0) {
       exchange();
-      previousValue = amountLeft.value;
-    }, 500);
-  }
-});
-currencyRight.addEventListener("change", () => {
-  if (amountLeft.value !== previousValue && amountLeft.value > 0) {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
+    }
+  }, 500)
+);
+
+currencyRight.addEventListener(
+  "change",
+  _.debounce(() => {
+    if (amountLeft.value > 0) {
       exchange();
-      previousValue = amountLeft.value;
-    }, 500);
-  }
-});
+    }
+  }, 500)
+);
